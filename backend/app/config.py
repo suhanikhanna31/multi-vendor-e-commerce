@@ -38,3 +38,14 @@ class TestingConfig(BaseConfig):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
 
+
+CONFIG_MAP = {
+    "development": DevelopmentConfig,
+    "production": ProductionConfig,
+    "testing": TestingConfig,
+}
+
+
+def get_config(name: str | None = None):
+    name = name or os.environ.get("FLASK_ENV", "development")
+    return CONFIG_MAP.get(name, DevelopmentConfig)
