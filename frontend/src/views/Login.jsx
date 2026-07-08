@@ -31,6 +31,18 @@ export default function Login() {
       sessionStorage.setItem("access_token", data.access_token);
       sessionStorage.setItem("role", data.role);
 
+      // vendor_id is embedded in the JWT claims, not the top-level response —
+      // decode the token payload to pull it out for vendor-scoped API calls
+      try {
+        const payload = JSON.parse(atob(data.access_token.split(".")[1]));
+        if (payload.vendor_id) {
+          sessionStorage.setItem("vendor_id", payload.vendor_id);
+        }
+      } catch {
+        // token wasn't a standard JWT shape — vendor-scoped routes just
+        // won't have a vendor_id available, non-fatal for admin/analyst roles
+      }
+
       if (data.role === "admin") navigate("/admin");
       else if (data.role === "vendor") navigate("/vendor/orders");
       else if (data.role === "analyst") navigate("/analyst/reports");
