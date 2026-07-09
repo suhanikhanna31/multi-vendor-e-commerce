@@ -8,8 +8,8 @@ Built with Flask · SQLAlchemy · React · Pandas · python-pptx/docx · Stripe 
 
 ## 🚀 Live Demo
 
-- **Frontend**: https://frolicking-semolina-4f3a60.netlify.app
-- **Backend API**: https://multi-vendor-e-commerce-1n4h.onrender.com (health check: `/api/health`)
+- **Frontend**: https://frolicking-semolina-4f3a60.netlify.app/login
+- **Backend API**: https://multi-vendor-e-commerce-1n4h.onrender.com/api/health
 
 Seeded demo logins (created automatically on deploy via `flask seed-admin` / `flask seed-demo-data`, see `backend/app/__init__.py`):
 
