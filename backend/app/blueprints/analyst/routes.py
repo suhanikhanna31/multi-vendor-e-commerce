@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, send_file
 
 from app.auth.decorators import roles_required
-from app.etl.vendor_etl import run_weekly_aggregation
+from app.etl.vendors_etl import run_weekly_aggregation
 from app.reports.pptx_generator import build_vendor_report_deck
 
 analyst_bp = Blueprint("analyst", __name__, url_prefix="/api/analyst")
