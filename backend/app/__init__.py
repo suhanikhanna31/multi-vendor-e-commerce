@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Flask
 
 from app.config import get_config
@@ -58,6 +60,59 @@ def _register_cli(app: Flask) -> None:
         db.session.add(admin)
         db.session.commit()
         print(f"Created admin user {email}.")
+
+    @app.cli.command("seed-demo-data")
+    def seed_demo_data():
+        """Populate the DB with sample vendors, orders, and vendor/analyst
+        logins so the dashboards have something to show. Safe to run
+        repeatedly — skips if vendors already exist.
+        """
+        import random
+        from datetime import timedelta
+
+        from werkzeug.security import generate_password_hash
+
+        from app.extensions import db
+        from app.models import Order, User, UserRole, Vendor
+
+        if Vendor.query.first():
+            print("Vendors already exist — skipping demo data seed.")
+            return
+
+        vendor_names = ["Northwind Traders", "Aarohi Textiles", "Blue Ridge Goods"]
+        vendors = []
+        for name in vendor_names:
+            v = Vendor(name=name, slug=name.lower().replace(" ", "-"), is_active=True)
+            db.session.add(v)
+            vendors.append(v)
+        db.session.flush()  # assigns vendor.id without a full commit
+
+        statuses = ["pending", "paid", "shipped", "failed"]
+        for i in range(30):
+            vendor = random.choice(vendors)
+            order = Order(
+                vendor_id=vendor.id,
+                external_order_id=f"DEMO-{1000 + i}",
+                amount_inr=round(random.uniform(500, 15000), 2),
+                status=random.choice(statuses),
+                created_at=datetime.utcnow() - timedelta(days=random.randint(0, 30)),
+            )
+            db.session.add(order)
+
+        vendor_user = User(
+            email="vendor@example.com",
+            password_hash=generate_password_hash("VendorDemo123"),
+            role=UserRole.VENDOR,
+            vendor_id=vendors[0].id,
+        )
+        analyst_user = User(
+            email="analyst@example.com",
+            password_hash=generate_password_hash("AnalystDemo123"),
+            role=UserRole.ANALYST,
+        )
+        db.session.add_all([vendor_user, analyst_user])
+        db.session.commit()
+        print(f"Seeded {len(vendors)} vendors, 30 orders, and vendor/analyst logins.")
 
 
 def _register_blueprints(app: Flask) -> None:
