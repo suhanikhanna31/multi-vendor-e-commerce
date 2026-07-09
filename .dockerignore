@@ -1,0 +1,12 @@
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.coverage
+**/htmlcov/
+backend/venv/
+backend/instance/
+frontend/node_modules/
+frontend/dist/
+.git/
+.env
+*.md
