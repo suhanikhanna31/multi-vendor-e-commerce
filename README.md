@@ -6,6 +6,25 @@ Built with Flask · SQLAlchemy · React · Pandas · python-pptx/docx · Stripe 
 
 > This is a portfolio/reference project, not a live production deployment. The numbers below describe the codebase itself (routes, models, tests) rather than real-world traffic or business metrics.
 
+## 🚀 Live Demo
+
+- **Frontend**: https://frolicking-semolina-4f3a60.netlify.app
+- **Backend API**: https://multi-vendor-e-commerce-1n4h.onrender.com (health check: `/api/health`)
+
+Seeded demo logins (created automatically on deploy via `flask seed-admin` / `flask seed-demo-data`, see `backend/app/__init__.py`):
+
+| Role | Email | Password | Lands on |
+|---|---|---|---|
+| Admin | `admin@example.com` | *(set via `ADMIN_PASSWORD` env var)* | `/admin` — platform-wide order/vendor summary |
+| Vendor | `vendor@example.com` | `VendorDemo123` | `/vendor/orders` — scoped to one seeded vendor's orders only |
+| Analyst | `analyst@example.com` | `AnalystDemo123` | `/analyst/reports` — run the ETL, download a generated vendor report deck |
+
+**Known limitations of this deployment:**
+- Backend runs on Render's free tier — the first request after ~15 minutes of inactivity takes 30–60s to wake up.
+- Stripe and SendGrid integrations are implemented (see `stripe_service.py`, `sendgrid_service.py`, `webhooks/routes.py`) but not configured in this deployment — Stripe requires an invite for India-based accounts, and no SendGrid key is set. Both fail gracefully (webhook signature verification catches the unconfigured state and returns a clean `400`, no crash).
+- `VendorInventory.jsx` and `AnalystTrends.jsx` are UI placeholders — there's no backend route for inventory or trends aggregation yet.
+- The ETL pipeline (`vendors_etl.py`) reads from CSV files on disk, decoupled from the live `Order`/`Vendor` tables that power the dashboards — this mirrors a real batch-ingestion pattern (e.g. vendors uploading weekly sales exports) rather than querying the transactional DB directly. Demo CSVs are seeded alongside the DB data so "Run ETL" / "Download Deck" produce real output.
+
 ## ✨ Highlights
 
 | Area | What's actually in the repo |
