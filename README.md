@@ -1,54 +1,64 @@
-Multi-Vendor E-Commerce Analytics & Operations Dashboard
+# Multi-Vendor E-Commerce Analytics & Operations Dashboard
 
-A modular, production-style dashboard for multi-vendor e-commerce platforms — covering payments, shipping, notifications, analytics ETL, and automated reporting.
+A modular Flask + React reference application for a multi-vendor e-commerce back office — covering role-based order/vendor management, payment and shipping webhook handling, a Pandas ETL pipeline, and automated PowerPoint/Word vendor reporting.
 
-Built with Flask · SQLAlchemy · React · Pandas · python-pptx/docx · Stripe · Shiprocket · SendGrid · AWS EC2.
+Built with Flask · SQLAlchemy · React · Pandas · python-pptx/docx · Stripe · Shiprocket · SendGrid.
 
+> This is a portfolio/reference project, not a live production deployment. The numbers below describe the codebase itself (routes, models, tests) rather than real-world traffic or business metrics.
 
-✨ Highlights
+## ✨ Highlights
 
-AreaResultBackend architectureModular Flask REST API using Blueprints, SQLAlchemy ORM, and RBAC across 3 roles (admin, vendor, analyst)ScaleSupports a platform processing ₹2.5 Cr+ monthly transaction volume across 40+ vendorsFrontendReact SPA, lazy-loaded routes, shared component system across 12+ views — 35% faster page loads, 50% fewer frontend bugsIntegrationsStripe / Shiprocket / SendGrid with webhook handling + idempotent retries — 99.6% payment reliability, 80% fewer failed delivery notificationsETLPandas pipelines unify raw vendor CSV exports into analytics-ready datasets — weekly reports cut from 2 FTE-days → <12 minutesReportingAutomated PowerPoint/Word vendor reports via python-pptx / python-docx — ~30% lower reporting ops costOpsDeployed on AWS EC2, env-based config, 82% pytest coverage
+| Area | What's actually in the repo |
+|---|---|
+| **Backend architecture** | Flask app factory with Blueprints (`admin`, `vendor`, `analyst`, `auth`, `webhooks`), SQLAlchemy models, and a `roles_required` / `vendor_scoped` decorator pair enforcing 3 roles (admin, vendor, analyst) |
+| **Frontend** | React SPA (Vite) with `react-router-dom`, 6 lazy-loaded views (Login, AdminDashboard, VendorOrders, VendorInventory, AnalystReports, AnalystTrends), one shared `DataTable` component, and a `useApi` fetch/auth hook |
+| **Integrations** | Stripe (payment intents + webhook signature verification), Shiprocket (shipment creation + tracking webhooks), SendGrid (templated transactional email) — all webhook events are deduplicated via a `WebhookEvent` table keyed on `event_id` |
+| **ETL** | `app/etl/vendors_etl.py` loads per-vendor CSV exports with Pandas, cleans/dedupes them, and aggregates into a weekly summary dataframe |
+| **Reporting** | `app/reports/pptx_generator.py` and `docx_generator.py` render a vendor performance deck/doc from the aggregated ETL output |
+| **Tests** | `pytest` suite (`backend/tests/`) covering auth/login, RBAC enforcement, and webhook idempotency — 6 tests, all passing, **55% statement coverage** measured via `pytest-cov` |
+| **Config** | Env-based config for dev/production/testing (`app/config.py`); `docker-compose.yml` runs Postgres + the Flask backend (gunicorn) + the React frontend (nginx) together; no CI workflow yet |
 
+## 🏗️ Architecture
 
-🏗️ Architecture
+```
+                     ┌─────────────────────┐
+                     │      React SPA       │
+                     │  (lazy routes, hooks) │
+                     └──────────┬───────────┘
+                                │ REST / JWT
+                     ┌──────────▼───────────┐
+                     │     Flask API         │
+                     │  Blueprints + RBAC     │
+                     └───┬──────┬──────┬─────┘
+         ┌───────────────┘      │      └───────────────┐
+┌─────────▼────────┐  ┌──────────▼─────────┐  ┌──────────▼─────────┐
+│ Stripe (payments) │  │ Shiprocket (ship.) │  │ SendGrid (notify.)  │
+│ webhooks + verify  │  │ webhooks + retry    │  │ templated emails    │
+└─────────────────────┘  └──────────────────────┘  └─────────────────────┘
+                                │
+                     ┌──────────▼───────────┐
+                     │   Pandas ETL Layer     │
+                     │ vendor CSV → analytics │
+                     └──────────┬───────────┘
+                     ┌──────────▼───────────┐
+                     │  Report Generation     │
+                     │ python-pptx / -docx    │
+                     └───────────────────────┘
 
-                         ┌─────────────────────┐
-                         │      React SPA       │
-                         │  (lazy routes, hooks) │
-                         └──────────┬───────────┘
-                                    │ REST / JWT
-                         ┌──────────▼───────────┐
-                         │     Flask API         │
-                         │  Blueprints + RBAC     │
-                         └───┬──────┬──────┬─────┘
-             ┌───────────────┘      │      └───────────────┐
-   ┌─────────▼────────┐  ┌──────────▼─────────┐  ┌──────────▼─────────┐
-   │  Stripe (payments) │  │ Shiprocket (ship.) │  │ SendGrid (notify.)  │
-   │  webhooks + retry   │  │ webhooks + retry    │  │ templated emails    │
-   └─────────────────────┘  └──────────────────────┘  └─────────────────────┘
-                                    │
-                         ┌──────────▼───────────┐
-                         │   Pandas ETL Layer     │
-                         │ vendor CSV → analytics │
-                         └──────────┬───────────┘
-                         ┌──────────▼───────────┐
-                         │  Report Generation     │
-                         │ python-pptx / -docx    │
-                         └───────────────────────┘
+           Env-based config (dev / production / testing) · pytest
+```
 
-               Deployed on AWS EC2 · env-based config · pytest CI
+## 📁 Repo Structure
 
-
-📁 Repo Structure
-
+```
 .
 ├── backend/
 │   ├── app/
 │   │   ├── __init__.py          # App factory, blueprint registration
-│   │   ├── config.py            # Env-based config (dev/staging/prod)
-│   │   ├── extensions.py        # db, jwt, cache singletons
-│   │   ├── models.py            # SQLAlchemy models (User, Vendor, Order, ...)
-│   │   ├── auth/                # JWT auth + RBAC decorators
+│   │   ├── config.py            # Env-based config (dev/production/testing)
+│   │   ├── extensions.py        # db, jwt, cors, migrate singletons
+│   │   ├── models.py            # SQLAlchemy models (User, Vendor, Order, WebhookEvent)
+│   │   ├── auth/                # JWT auth routes + RBAC decorators
 │   │   ├── blueprints/
 │   │   │   ├── admin/           # Admin-tier routes
 │   │   │   ├── vendor/          # Vendor-tier routes
@@ -59,66 +69,91 @@ AreaResultBackend architectureModular Flask REST API using Blueprints, SQLAlchem
 │   │   │   └── sendgrid_service.py
 │   │   ├── webhooks/            # Idempotent webhook receivers
 │   │   ├── etl/
-│   │   │   └── vendor_etl.py    # Pandas ETL pipeline
+│   │   │   └── vendors_etl.py   # Pandas ETL pipeline
 │   │   └── reports/
 │   │       ├── pptx_generator.py
 │   │       └── docx_generator.py
-│   ├── tests/                   # pytest suite (82% coverage)
+│   ├── migrations/              # Flask-Migrate/Alembic scripts
+│   ├── tests/                   # pytest suite (55% coverage)
+│   ├── Dockerfile
 │   └── run.py
 ├── frontend/
-│   └── src/
-│       ├── hooks/useApi.js      # Shared fetch/auth hook
-│       ├── components/shared/   # Reused component library
-│       └── routes/AppRoutes.jsx # Lazy-loaded route config
+│   ├── src/
+│   │   ├── hooks/useApi.js      # Shared fetch/auth hook
+│   │   ├── components/shared/   # DataTable.jsx
+│   │   ├── views/                # 6 lazy-loaded route views
+│   │   └── routes/AppRoutes.jsx # Route config
+│   ├── Dockerfile
+│   └── nginx.conf
+├── docker-compose.yml
 ├── requirements.txt
 ├── .env.example
+├── .dockerignore
 ├── .gitignore
 └── LICENSE
+```
 
+## ⚙️ Setup
 
-⚙️ Setup
+### Backend
 
-Backend
-
-bashcd backend
+```bash
+cd backend
 python -m venv venv && source venv/bin/activate
 pip install -r ../requirements.txt
 cp ../.env.example .env      # fill in Stripe/Shiprocket/SendGrid/DB keys
 flask db upgrade
 python run.py
+```
 
-Frontend
+### Frontend
 
-bashcd frontend
+```bash
+cd frontend
 npm install
 npm run dev
+```
 
-Tests
+### Tests
 
-bashcd backend
+```bash
+cd backend
 pytest --cov=app --cov-report=term-missing
+```
 
+### Docker
 
-🔑 Role-Based Access Control
+```bash
+cp .env.example .env      # fill in Stripe/Shiprocket/SendGrid keys; DATABASE_URL is overridden by compose
+docker compose up --build
+```
 
-RoleAccessAdminFull platform visibility, vendor onboarding, payout approvalsVendorOwn orders/inventory/payouts, self-service report downloadsAnalystRead-only cross-vendor analytics, ETL exports, report generation
+This starts three services:
+- `db` — Postgres 16, exposed on `5432`
+- `backend` — Flask + gunicorn, runs `flask db upgrade` on startup, exposed on `5000`
+- `frontend` — Vite build served by nginx, exposed on `8080`, proxies `/api/*` to `backend:5000`
 
-Enforced via a @roles_required(...) decorator on top of JWT claims (see backend/app/auth/decorators.py).
+Open `http://localhost:8080`. The Docker setup was validated by building the Dockerfiles' logic and linting `docker-compose.yml`, but wasn't run end-to-end in this environment (no Docker daemon here) — test it locally before relying on it.
 
+## 🔑 Role-Based Access Control
 
-🔌 Third-Party Integrations
+| Role | Access |
+|---|---|
+| **Admin** | Lists all vendors, views platform-wide order/vendor summary |
+| **Vendor** | Own orders only, enforced by `vendor_scoped` (cross-vendor requests return 403) |
+| **Analyst** | Triggers the ETL aggregation and generates per-vendor report decks |
 
+Enforced via `@roles_required(...)` and `@vendor_scoped` decorators on top of JWT claims (see `backend/app/auth/decorators.py`).
 
-Stripe — payment intents, refunds, webhook signature verification, idempotency keys on retries → 99.6% processing reliability.
-Shiprocket — shipment creation, tracking webhooks, retry-on-failure queue → 80% reduction in failed delivery notifications.
-SendGrid — templated transactional emails (order confirmation, shipment updates, weekly vendor digests).
+## 🔌 Third-Party Integrations
 
+- **Stripe** — payment intent handling, webhook signature verification.
+- **Shiprocket** — shipment creation, tracking webhooks.
+- **SendGrid** — templated transactional emails (e.g. order confirmation) triggered from the Stripe webhook handler.
 
-All webhook handlers persist an event_id and short-circuit duplicate deliveries (idempotent by design).
+All webhook handlers persist a `WebhookEvent.event_id` and short-circuit duplicate deliveries, verified by `tests/test_webhooks.py::test_stripe_webhook_is_idempotent`.
 
+## 📊 ETL & Reporting
 
-📊 ETL & Reporting
-
-
-etl/vendor_etl.py ingests raw per-vendor CSV exports (orders, inventory), normalizes schemas, deduplicates, and aggregates into unified weekly datasets.
-reports/pptx_generator.py and reports/docx_generator.py render templated vendor performance decks/reports with conditional formatting (e.g. red/amber/green KPI flags) directly from the aggregated datasets.
+- `etl/vendors_etl.py` ingests raw per-vendor CSV exports, cleans/deduplicates them, and aggregates into a weekly summary dataframe (`run_weekly_aggregation`).
+- `reports/pptx_generator.py` and `reports/docx_generator.py` render a vendor performance deck/report from that aggregated dataframe, exposed via the analyst blueprint's `/api/analyst/reports/<vendor_id>/deck` endpoint.
