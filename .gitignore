@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.env
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Reports / data
+*.pptx
+*.docx
+*.csv
+!backend/tests/fixtures/*.csv
+
+# Misc
+.DS_Store
+*.log
+instance/
