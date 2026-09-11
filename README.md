@@ -10,7 +10,8 @@ vendor reporting.
 
 🚀 Live Deployment
 
-Frontend: https://multi-vendor-e-commerce-nu.vercel.app
+Frontend: https://multi-vendor-e-commerce-nu.vercel.app/login
+[Email: admin@example.com, Password:1234]
 
 Backend API:
 https://su-382ca15e5098416e9d60dd738a2603c0.ecs.ap-south-1.on.aws
