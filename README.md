@@ -8,7 +8,7 @@ The application provides role-based order and vendor management, webhook
 integrations, ETL analytics, machine-learning workflows, and automated
 vendor reporting.
 
-🚀 Live Deployment
+🚀 Live Deployment (Current status - PAUSED SERVICE)
 
 Frontend: https://multi-vendor-e-commerce-nu.vercel.app/login
 [Email: admin@example.com, Password:1234]
